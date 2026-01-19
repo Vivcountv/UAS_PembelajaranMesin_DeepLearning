@@ -195,14 +195,17 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Link alternatif (jika ada hosting dataset)
     st.markdown("#### 🔗 Link Dataset Eksternal")
+
+    DATASET_LINK = "https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing"
     
-    # Text input untuk link Google Drive / Dropbox
-    dataset_link = st.text_input(
-        "Link Google Drive/Dropbox:",
-        placeholder="https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing",
-        help="https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing")
+    st.link_button(
+        label="📥 Download Dataset Lengkap dari Google Drive",
+        url=DATASET_LINK,
+        help="Klik untuk membuka Google Drive dan download dataset 41 orang",
+        type="primary",
+        use_container_width=True
+    )
     
     if dataset_link:
         st.markdown(f"[🔗 Buka Link Dataset]({dataset_link})")

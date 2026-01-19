@@ -468,6 +468,7 @@ CARA TESTING:
 6. Klik "SCAN & VERIFIKASI"
 
 LINK DATASET LENGKAP (jika diperlukan):
-[Masukkan link Google Drive Anda di sini]
+https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=drive_link
 
 ID YANG VALID: 001 - 041
+```

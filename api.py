@@ -202,7 +202,7 @@ with st.sidebar:
     dataset_link = st.text_input(
         "Link Google Drive/Dropbox:",
         placeholder="https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing",
-        help="https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing"
+        help="ketik apa saja lalu enter"
         print("https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing")
     )
     

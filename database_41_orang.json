@@ -1,0 +1,289 @@
+{
+    "001": {
+        "id": "001",
+        "nama": "Made Pratama",
+        "jabatan": "Security",
+        "usia": 24,
+        "status": "Aktif"
+    },
+    "002": {
+        "id": "002",
+        "nama": "Budi Manurung",
+        "jabatan": "Security",
+        "usia": 24,
+        "status": "Aktif"
+    },
+    "003": {
+        "id": "003",
+        "nama": "Oscar Santoso",
+        "jabatan": "Laboran",
+        "usia": 27,
+        "status": "Aktif"
+    },
+    "004": {
+        "id": "004",
+        "nama": "Gita Kirana",
+        "jabatan": "Staf Admin",
+        "usia": 40,
+        "status": "Aktif"
+    },
+    "005": {
+        "id": "005",
+        "nama": "Indah Pratama",
+        "jabatan": "Kepala Lab",
+        "usia": 36,
+        "status": "Aktif"
+    },
+    "006": {
+        "id": "006",
+        "nama": "Lina Kusuma",
+        "jabatan": "Dosen",
+        "usia": 26,
+        "status": "Aktif"
+    },
+    "007": {
+        "id": "007",
+        "nama": "Putri Sari",
+        "jabatan": "Staf Admin",
+        "usia": 40,
+        "status": "Aktif"
+    },
+    "008": {
+        "id": "008",
+        "nama": "Oscar Kusuma",
+        "jabatan": "Kepala Lab",
+        "usia": 38,
+        "status": "Aktif"
+    },
+    "009": {
+        "id": "009",
+        "nama": "Indah Santoso",
+        "jabatan": "Dosen",
+        "usia": 53,
+        "status": "Aktif"
+    },
+    "010": {
+        "id": "010",
+        "nama": "Hendra Lestari",
+        "jabatan": "Mahasiswa",
+        "usia": 23,
+        "status": "Aktif"
+    },
+    "011": {
+        "id": "011",
+        "nama": "Indah Kusuma",
+        "jabatan": "Staf Admin",
+        "usia": 49,
+        "status": "Aktif"
+    },
+    "012": {
+        "id": "012",
+        "nama": "Gita Hidayat",
+        "jabatan": "Staf Admin",
+        "usia": 47,
+        "status": "Aktif"
+    },
+    "013": {
+        "id": "013",
+        "nama": "Hendra Santoso",
+        "jabatan": "Laboran",
+        "usia": 30,
+        "status": "Aktif"
+    },
+    "014": {
+        "id": "014",
+        "nama": "Joko Siregar",
+        "jabatan": "Mahasiswa",
+        "usia": 36,
+        "status": "Aktif"
+    },
+    "015": {
+        "id": "015",
+        "nama": "Dewi Lestari",
+        "jabatan": "Staf Admin",
+        "usia": 49,
+        "status": "Aktif"
+    },
+    "016": {
+        "id": "016",
+        "nama": "Andi Saputra",
+        "jabatan": "Laboran",
+        "usia": 34,
+        "status": "Aktif"
+    },
+    "017": {
+        "id": "017",
+        "nama": "Dewi Siregar",
+        "jabatan": "Security",
+        "usia": 39,
+        "status": "Aktif"
+    },
+    "018": {
+        "id": "018",
+        "nama": "Nurul Kirana",
+        "jabatan": "Security",
+        "usia": 24,
+        "status": "Aktif"
+    },
+    "019": {
+        "id": "019",
+        "nama": "Joko Pratama",
+        "jabatan": "Staf Admin",
+        "usia": 36,
+        "status": "Aktif"
+    },
+    "020": {
+        "id": "020",
+        "nama": "Budi Lestari",
+        "jabatan": "Mahasiswa",
+        "usia": 41,
+        "status": "Aktif"
+    },
+    "021": {
+        "id": "021",
+        "nama": "Fajar Manurung",
+        "jabatan": "Mahasiswa",
+        "usia": 28,
+        "status": "Aktif"
+    },
+    "022": {
+        "id": "022",
+        "nama": "Lina Siregar",
+        "jabatan": "Kepala Lab",
+        "usia": 34,
+        "status": "Aktif"
+    },
+    "023": {
+        "id": "023",
+        "nama": "Dewi Kusuma",
+        "jabatan": "Laboran",
+        "usia": 53,
+        "status": "Aktif"
+    },
+    "024": {
+        "id": "024",
+        "nama": "Joko Pratama",
+        "jabatan": "Mahasiswa",
+        "usia": 20,
+        "status": "Aktif"
+    },
+    "025": {
+        "id": "025",
+        "nama": "Dewi Wijaya",
+        "jabatan": "Security",
+        "usia": 47,
+        "status": "Aktif"
+    },
+    "026": {
+        "id": "026",
+        "nama": "Oscar Kusuma",
+        "jabatan": "Staf Admin",
+        "usia": 46,
+        "status": "Aktif"
+    },
+    "027": {
+        "id": "027",
+        "nama": "Dewi Kurniawan",
+        "jabatan": "Staf Admin",
+        "usia": 55,
+        "status": "Aktif"
+    },
+    "028": {
+        "id": "028",
+        "nama": "Oscar Wijaya",
+        "jabatan": "Staf Admin",
+        "usia": 24,
+        "status": "Aktif"
+    },
+    "029": {
+        "id": "029",
+        "nama": "Fajar Kurniawan",
+        "jabatan": "Security",
+        "usia": 26,
+        "status": "Aktif"
+    },
+    "030": {
+        "id": "030",
+        "nama": "Putri Kurniawan",
+        "jabatan": "Laboran",
+        "usia": 35,
+        "status": "Aktif"
+    },
+    "031": {
+        "id": "031",
+        "nama": "Kartika Manurung",
+        "jabatan": "Mahasiswa",
+        "usia": 21,
+        "status": "Aktif"
+    },
+    "032": {
+        "id": "032",
+        "nama": "Indah Kusuma",
+        "jabatan": "Dosen",
+        "usia": 54,
+        "status": "Aktif"
+    },
+    "033": {
+        "id": "033",
+        "nama": "Indah Saputra",
+        "jabatan": "Laboran",
+        "usia": 49,
+        "status": "Aktif"
+    },
+    "034": {
+        "id": "034",
+        "nama": "Joko Kirana",
+        "jabatan": "Dosen",
+        "usia": 23,
+        "status": "Aktif"
+    },
+    "035": {
+        "id": "035",
+        "nama": "Hendra Kusuma",
+        "jabatan": "Laboran",
+        "usia": 49,
+        "status": "Aktif"
+    },
+    "036": {
+        "id": "036",
+        "nama": "Fajar Pratama",
+        "jabatan": "Kepala Lab",
+        "usia": 43,
+        "status": "Aktif"
+    },
+    "037": {
+        "id": "037",
+        "nama": "Made Siregar",
+        "jabatan": "Dosen",
+        "usia": 33,
+        "status": "Aktif"
+    },
+    "038": {
+        "id": "038",
+        "nama": "Nurul Santoso",
+        "jabatan": "Mahasiswa",
+        "usia": 51,
+        "status": "Aktif"
+    },
+    "039": {
+        "id": "039",
+        "nama": "Kartika Wijaya",
+        "jabatan": "Mahasiswa",
+        "usia": 41,
+        "status": "Aktif"
+    },
+    "040": {
+        "id": "040",
+        "nama": "Lina Kusuma",
+        "jabatan": "Mahasiswa",
+        "usia": 55,
+        "status": "Aktif"
+    },
+    "041": {
+        "id": "041",
+        "nama": "Oscar Wijaya",
+        "jabatan": "Laboran",
+        "usia": 54,
+        "status": "Aktif"
+    }
+}

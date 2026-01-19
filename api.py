@@ -63,13 +63,6 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #155a8a;
     }
-    .download-section {
-        background-color: #f0f8ff;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #1f77b4;
-        margin: 20px 0;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -129,10 +122,10 @@ def create_sample_zip():
         # Ambil 10 sample foto pertama dari folder database_foto
         database_path = "database_foto"
         if os.path.exists(database_path):
-            files = os.listdir(database_path)[:10]  # Ambil 10 file pertama
+            files = sorted(os.listdir(database_path))[:10]  # Ambil 10 file pertama
             for filename in files:
                 file_path = os.path.join(database_path, filename)
-                if os.path.isfile(file_path):
+                if os.path.isfile(file_path) and filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                     zip_file.write(file_path, arcname=filename)
     
     zip_buffer.seek(0)
@@ -149,7 +142,8 @@ with st.sidebar:
     **Tentang Sistem:**
     - Model: MobileNetV2 + Siamese Network
     - Dataset: 41 Orang
-    - Akurasi Klasifikasi: Training Model
+    - Input Size: 224x224 (Klasifikasi)
+    - Input Size: 128x128 (Verifikasi)
     - Threshold Verifikasi: 0.5
     """)
     
@@ -161,13 +155,12 @@ with st.sidebar:
     
     Sistem ini hanya dapat mengenali **41 orang** yang sudah dilatih dalam model.
     
-    Untuk testing, Anda perlu menggunakan foto dari 41 orang tersebut.
+    Untuk testing, gunakan foto dari dataset di bawah ini.
     """)
     
-    # Tombol Download Sample
+    # Tombol Download Sample (dari folder lokal)
     st.markdown("#### 📥 Download Sample Foto")
     
-    # Cek apakah folder database_foto ada
     if os.path.exists("database_foto") and len(os.listdir("database_foto")) > 0:
         try:
             zip_data = create_sample_zip()
@@ -176,7 +169,8 @@ with st.sidebar:
                 data=zip_data,
                 file_name="sample_telapak_tangan.zip",
                 mime="application/zip",
-                help="Download 10 foto sample untuk testing sistem"
+                help="Download 10 foto sample untuk testing sistem",
+                use_container_width=True
             )
             st.success("✅ Sample tersedia untuk download")
         except Exception as e:
@@ -186,7 +180,33 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # LINK GOOGLE DRIVE - GANTI DENGAN LINK ANDA!
+    st.markdown("#### 🔗 Dataset Lengkap")
+    
+    # ===== GANTI LINK INI DENGAN LINK GOOGLE DRIVE ANDA =====
+    DATASET_LINK = "https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing"
+    # =========================================================
+    
+    st.info("""
+    **Dataset Lengkap berisi:**
+    - 41 identitas (ID: 001-041)
+    - Total ~500+ foto training
+    - Format: JPG/PNG
+    - Ukuran: ~XX MB
+    """)
+    
+    st.link_button(
+        label="📥 Buka Google Drive",
+        url=DATASET_LINK,
+        help="Download dataset lengkap untuk testing lebih dalam",
+        type="primary",
+        use_container_width=True
+    )
+    
+    st.caption("⬆️ Klik tombol di atas untuk membuka Google Drive")
+    
     # Daftar ID yang tersedia
+    st.markdown("---")
     with st.expander("📜 Daftar ID Terlatih (41 Orang)"):
         cols = st.columns(3)
         for i, class_name in enumerate(CLASS_NAMES):
@@ -195,31 +215,23 @@ with st.sidebar:
     
     st.markdown("---")
     
-    st.markdown("#### 🔗 Link Dataset Eksternal")
-
-    DATASET_LINK = "https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=sharing"
-    
-    st.link_button(
-        label="📥 Download Dataset Lengkap dari Google Drive",
-        url=DATASET_LINK,
-        help="Klik untuk membuka Google Drive dan download dataset 41 orang",
-        type="primary",
-        use_container_width=True
-    )
-    
-    if dataset_link:
-        st.markdown(f"[🔗 Buka Link Dataset]({dataset_link})")
-    
-    # Contoh cara menggunakan
-    st.markdown("---")
+    # Panduan Penggunaan
     st.markdown("#### 📖 Cara Penggunaan")
     st.markdown("""
-    1. Download sample foto di atas
+    1. Download sample/dataset
     2. Extract file ZIP
     3. Upload salah satu foto
     4. Klik "SCAN & VERIFIKASI"
     5. Lihat hasil identifikasi
     """)
+    
+    st.markdown("---")
+    st.markdown("""
+    <div style='text-align: center; color: #666; font-size: 0.8em;'>
+        <p>Sistem Biometrik v1.0</p>
+        <p>Developed with ❤️ using Streamlit</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # 5. TAMPILAN UTAMA (UI)
@@ -269,19 +281,24 @@ def main():
                 st.markdown("""
                 **Untuk mendapatkan foto testing yang valid:**
                 
-                1. **Opsi 1: Download Sample**
+                1. **Opsi 1: Download Sample (Cepat)**
                    - Buka sidebar di kiri
                    - Klik "📦 Download 10 Sample Foto"
                    - Extract ZIP dan upload salah satu foto
                 
-                2. **Opsi 2: Gunakan Dataset Lengkap**
-                   - Hubungi pengembang untuk link dataset
-                   - Atau gunakan link di sidebar (jika tersedia)
+                2. **Opsi 2: Dataset Lengkap (Lengkap)**
+                   - Klik tombol "📥 Buka Google Drive" di sidebar
+                   - Download dataset lengkap (41 orang)
+                   - Extract dan pilih foto untuk testing
                 
                 3. **Catatan Penting:**
                    - Foto random dari internet **TIDAK** akan dikenali
                    - Sistem hanya mengenali 41 orang tertentu
                    - ID yang valid: 001 - 041
+                   
+                4. **Testing Skenario:**
+                   - **Positive Test:** Upload foto dari dataset → Harus VERIFIED
+                   - **Negative Test:** Upload foto random → Akan REJECTED
                 """)
 
     # --- KOLOM KANAN: HASIL ---
@@ -402,6 +419,8 @@ def main():
                     st.write(f"**Prediksi Index:** {idx}")
                     st.write(f"**Raw Confidence:** {conf_clf:.4f}%")
                     st.write(f"**Status Verifikasi:** {status_verif}")
+                    st.write(f"**ID Terdeteksi:** {id_user}")
+                    st.write(f"**Jarak Euclidean:** {jarak:.6f}")
                 
         elif not uploaded_file:
             st.info("ℹ️ Menunggu input gambar...")
@@ -419,6 +438,7 @@ def main():
             - Gunakan foto dari 41 orang yang sudah dilatih
             - Foto random tidak akan dikenali dengan akurat
             - Download sample di sidebar untuk testing
+            - Sistem menggunakan dua tahap: Klasifikasi + Verifikasi
             """)
         else:
             st.warning("⚠️ Klik tombol SCAN & VERIFIKASI untuk memproses")

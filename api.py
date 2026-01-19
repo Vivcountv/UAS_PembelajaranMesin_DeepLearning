@@ -9,7 +9,6 @@ import keras
 # ==========================================
 # 1. DEFINISI CUSTOM OBJECTS (WAJIB ADA)
 # ==========================================
-# Agar Streamlit tidak error saat meload model Siamese
 @keras.saving.register_keras_serializable()
 def euclidean_distance(vectors):
     x, y = vectors
@@ -27,15 +26,52 @@ class EuclideanDistance(keras.layers.Layer):
 # ==========================================
 # 2. CONFIG & LOAD MODEL
 # ==========================================
-st.set_page_config(page_title="Sistem Keamanan Biometrik", page_icon="🖐️", layout="wide")
+st.set_page_config(
+    page_title="Sistem Keamanan Biometrik", 
+    page_icon="🖐️", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Custom CSS untuk styling tambahan
+st.markdown("""
+    <style>
+    .main-title {
+        text-align: center;
+        color: #1f77b4;
+        font-size: 3em;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-size: 1.2em;
+        margin-bottom: 30px;
+    }
+    .stButton>button {
+        width: 100%;
+        background-color: #1f77b4;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    .stButton>button:hover {
+        background-color: #155a8a;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 @st.cache_resource
 def load_models():
     # A. Load Model Klasifikasi
     try:
         model_clf = keras.models.load_model("model_klasifikasi_telapak.h5", compile=False)
+        st.success("✅ Model Klasifikasi berhasil dimuat")
     except Exception as e:
-        st.error(f"Gagal memuat Model Klasifikasi: {e}")
+        st.error(f"❌ Gagal memuat Model Klasifikasi: {e}")
         model_clf = None
 
     # B. Load Model Siamese (Verifikasi)
@@ -45,8 +81,9 @@ def load_models():
     }
     try:
         model_sia = keras.models.load_model("model_siamese_telapak.h5", custom_objects=custom_objects, compile=False)
+        st.success("✅ Model Siamese berhasil dimuat")
     except Exception as e:
-        st.warning(f"Model Siamese gagal dimuat: {e}")
+        st.warning(f"⚠️ Model Siamese gagal dimuat: {e}")
         model_sia = None
     
     return model_clf, model_sia
@@ -57,6 +94,7 @@ try:
         DATABASE = json.load(f)
 except FileNotFoundError:
     DATABASE = {}
+    st.warning("⚠️ File database_41_orang.json tidak ditemukan")
 
 CLASS_NAMES = [f"{i+1:03d}" for i in range(41)]
 
@@ -75,46 +113,48 @@ def preprocess_image(image, target_size):
 # 4. TAMPILAN UTAMA (UI)
 # ==========================================
 def main():
-    # Header
-    st.markdown("""
-    <div style='text-align: center; margin-bottom: 30px;'>
-        <h1>🖐️ Sistem Keamanan Biometrik</h1>
-        <p>Integrasi Klasifikasi MobileNetV2 & Verifikasi Siamese Network</p>
-        <hr>
-    </div>
-    """, unsafe_allow_html=True)
+    # Header dengan emoji dan styling
+    st.markdown('<p class="main-title">🖐️ Sistem Keamanan Biometrik</p>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Integrasi Klasifikasi MobileNetV2 & Verifikasi Siamese Network</p>', unsafe_allow_html=True)
+    st.markdown("---")
 
     # Load Model
     model_clf, model_siamese = load_models()
+    
     if not model_clf: 
-        st.error("Model Utama tidak ditemukan. Harap cek file .h5")
-        return
+        st.error("⛔ Model Utama tidak ditemukan. Harap cek file .h5")
+        st.stop()
 
     # Layout Dua Kolom
-    col_input, col_hasil = st.columns([1, 1.5], gap="large")
+    col_input, col_hasil = st.columns([1, 1.8], gap="large")
 
     # --- KOLOM KIRI: INPUT ---
     with col_input:
-        st.subheader("1. Input Citra")
-        uploaded_file = st.file_uploader("Upload Foto Telapak Tangan", type=["jpg", "png", "jpeg"])
+        st.markdown("### 📸 Input Citra")
+        uploaded_file = st.file_uploader(
+            "Upload Foto Telapak Tangan", 
+            type=["jpg", "png", "jpeg"],
+            help="Format: JPG, PNG, JPEG"
+        )
         
         if uploaded_file:
             image_display = Image.open(uploaded_file)
-            st.image(image_display, caption="Preview Input", use_column_width=True)
-            
-            run_process = st.button("🔍 SCAN & VERIFIKASI", type="primary", use_container_width=True)
+            st.image(image_display, caption="Preview Gambar", use_column_width=True)
+            st.markdown("")  # Spacing
+            run_process = st.button("🔍 SCAN & VERIFIKASI", type="primary")
+        else:
+            st.info("👆 Silakan upload gambar telapak tangan untuk memulai")
 
     # --- KOLOM KANAN: HASIL ---
     with col_hasil:
-        st.subheader("2. Hasil Identifikasi")
+        st.markdown("### 📊 Hasil Identifikasi")
 
         if uploaded_file and run_process:
-            with st.spinner('Menganalisis pola biometrik...'):
+            with st.spinner('🔄 Menganalisis pola biometrik...'):
                 
                 # A. KLASIFIKASI (Menebak ID)
-                # MobileNet butuh 224x224
                 input_clf = preprocess_image(image_display, (224, 224)) 
-                preds = model_clf.predict(input_clf)
+                preds = model_clf.predict(input_clf, verbose=0)
                 
                 idx = np.argmax(preds)
                 conf_clf = float(np.max(preds) * 100)
@@ -128,81 +168,113 @@ def main():
                 status_verif = "UNVERIFIED"
                 
                 if model_siamese:
-                    # Cari foto referensi di folder
                     path_ref = os.path.join("database_foto", f"{id_user}.jpg")
                     
                     if os.path.exists(path_ref):
                         img_ref = Image.open(path_ref)
                         
-                        # Siamese butuh 128x128 (Sesuaikan dengan training Anda)
                         SIZE_SIA = (128, 128)
                         in_1 = preprocess_image(image_display, SIZE_SIA)
                         in_2 = preprocess_image(img_ref, SIZE_SIA)
                         
-                        # PREDIKSI JARAK (Dual Input)
-                        pred_sia = model_siamese.predict([in_1, in_2])
+                        pred_sia = model_siamese.predict([in_1, in_2], verbose=0)
                         jarak = float(pred_sia[0][0])
                         
-                        # LOGIKA THRESHOLD
                         THRESHOLD = 0.5
                         if jarak < THRESHOLD:
                             status_verif = "VERIFIED"
                         else:
-                            status_verif = "REJECTED (Low Similarity)"
+                            status_verif = "REJECTED"
                     else:
-                        st.warning(f"Foto referensi {id_user}.jpg tidak ditemukan. Verifikasi dilewati.")
+                        st.warning(f"⚠️ Foto referensi {id_user}.jpg tidak ditemukan")
                 
-                # C. MENAMPILKAN KARTU IDENTITAS
+                # C. TAMPILAN HASIL DENGAN STREAMLIT NATIVE
+                st.markdown("")  # Spacing
+                
+                # Status Badge
                 if status_verif == "VERIFIED":
-                    theme_color = "#27ae60"  # Hijau
-                    bg_theme = "#e9f7ef"
-                    icon = "✅"
+                    st.success(f"### ✅ AKSES DITERIMA - {status_verif}")
+                    status_color = "green"
                 else:
-                    theme_color = "#c0392b"  # Merah
-                    bg_theme = "#fdedec"
-                    icon = "⛔"
-
-                # RENDER HTML CARD (PERBAIKAN DI SINI)
-                st.markdown(f"""
-                <div style="
-                    border: 2px solid {theme_color};
-                    border-radius: 15px;
-                    padding: 25px;
-                    background-color: {bg_theme};
-                    font-family: sans-serif;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid {theme_color}; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h2 style="color: {theme_color}; margin: 0;">{icon} {status_verif}</h2>
-                        <h3 style="margin: 0; color: #555;">ID: {id_user}</h3>
-                    </div>
+                    st.error(f"### ⛔ AKSES DITOLAK - {status_verif}")
+                    status_color = "red"
+                
+                st.markdown("---")
+                
+                # Informasi dalam Container
+                with st.container():
+                    # Baris 1: ID dan Confidence
+                    metric_col1, metric_col2 = st.columns(2)
+                    with metric_col1:
+                        st.metric(
+                            label="🆔 ID Pengguna",
+                            value=id_user,
+                            delta=None
+                        )
+                    with metric_col2:
+                        st.metric(
+                            label="📊 Confidence Score",
+                            value=f"{conf_clf:.2f}%",
+                            delta=f"{conf_clf - 50:.1f}%" if conf_clf > 50 else None
+                        )
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <p style="margin:0; font-size:0.85em; color:#666;">NAMA LENGKAP</p>
-                            <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['nama']}</p>
-                        </div>
-                        <div>
-                            <p style="margin:0; font-size:0.85em; color:#666;">JABATAN</p>
-                            <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['jabatan']}</p>
-                        </div>
-                        <div>
-                            <p style="margin:0; font-size:0.85em; color:#666;">USIA</p>
-                            <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['usia']} Tahun</p>
-                        </div>
-                        <div>
-                            <p style="margin:0; font-size:0.85em; color:#666;">JARAK SIAMESE</p>
-                            <p style="margin:0; font-size:1.2em; font-weight:bold; color:{theme_color};">{jarak:.4f}</p>
-                        </div>
-                    </div>
-                    <br>
-                    <small style="color: #777;"><i>Klasifikasi Confidence: {conf_clf:.2f}%</i></small>
-                </div>
-                """, unsafe_allow_html=True)
+                    st.markdown("")
+                    
+                    # Baris 2: Nama dan Jabatan
+                    info_col1, info_col2 = st.columns(2)
+                    with info_col1:
+                        st.markdown(f"""
+                        **👤 NAMA LENGKAP**  
+                        `{info['nama']}`
+                        """)
+                    with info_col2:
+                        st.markdown(f"""
+                        **💼 JABATAN**  
+                        `{info['jabatan']}`
+                        """)
+                    
+                    st.markdown("")
+                    
+                    # Baris 3: Usia dan Jarak Siamese
+                    detail_col1, detail_col2 = st.columns(2)
+                    with detail_col1:
+                        st.markdown(f"""
+                        **🎂 USIA**  
+                        `{info['usia']} Tahun`
+                        """)
+                    with detail_col2:
+                        jarak_color = "🟢" if jarak < 0.5 else "🔴"
+                        st.markdown(f"""
+                        **📏 JARAK SIAMESE**  
+                        {jarak_color} `{jarak:.4f}`
+                        """)
+                
+                st.markdown("---")
+                
+                # Progress Bar untuk visualisasi confidence
+                st.markdown("**Tingkat Kepercayaan Klasifikasi:**")
+                st.progress(min(conf_clf / 100, 1.0))
+                
+                # Expander untuk detail teknis
+                with st.expander("🔬 Detail Teknis"):
+                    st.write(f"**Model Klasifikasi:** MobileNetV2")
+                    st.write(f"**Model Verifikasi:** Siamese Network")
+                    st.write(f"**Threshold Siamese:** 0.5")
+                    st.write(f"**Prediksi Index:** {idx}")
+                    st.write(f"**Raw Confidence:** {conf_clf:.4f}%")
+                    st.write(f"**Status Verifikasi:** {status_verif}")
                 
         elif not uploaded_file:
-            # Tampilan Kosong
-            st.info("Silakan upload gambar untuk memulai proses identifikasi.")
+            st.info("ℹ️ Menunggu input gambar...")
+            st.markdown("""
+            **Cara Penggunaan:**
+            1. Upload foto telapak tangan di kolom sebelah kiri
+            2. Klik tombol **SCAN & VERIFIKASI**
+            3. Tunggu hasil analisis muncul di sini
+            4. Sistem akan menampilkan identitas dan status verifikasi
+            """)
+        else:
+            st.warning("⚠️ Klik tombol SCAN & VERIFIKASI untuk memproses")
 
 if __name__ == '__main__':
     main()

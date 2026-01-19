@@ -1,40 +1,19 @@
-<<<<<<< HEAD
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import tensorflow as tf
-import numpy as np
-from PIL import Image
-import json
-import io
-=======
 import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
->>>>>>> 5a89ef314d09fc40f633f6fc05431870735d8187
 import os
 import keras
 
 # ==========================================
-<<<<<<< HEAD
-# 1. DEFINISI CUSTOM OBJECTS
+# 1. DEFINISI CUSTOM LAYER (Supaya Cloud Tidak Error)
 # ==========================================
-
-# Definisi Function (Penyebab error "function not found")
-=======
-# 1. DEFINISI CUSTOM LAYER 
-# ==========================================
->>>>>>> 5a89ef314d09fc40f633f6fc05431870735d8187
 @keras.saving.register_keras_serializable()
 def euclidean_distance(vectors):
     x, y = vectors
     sum_square = tf.math.reduce_sum(tf.math.square(x - y), axis=1, keepdims=True)
     return tf.math.sqrt(tf.math.maximum(sum_square, tf.keras.backend.epsilon()))
 
-<<<<<<< HEAD
-# Definisi Class (Jaga-jaga)
-=======
->>>>>>> 5a89ef314d09fc40f633f6fc05431870735d8187
 @keras.saving.register_keras_serializable()
 class EuclideanDistance(keras.layers.Layer):
     def __init__(self, **kwargs):
@@ -43,51 +22,8 @@ class EuclideanDistance(keras.layers.Layer):
         x, y = inputs
         return tf.math.reduce_sum(tf.math.square(x - y), axis=-1, keepdims=True)
 
-<<<<<<< HEAD
-app = Flask(__name__)
-CORS(app)
-
 # ==========================================
-# 2. LOAD MODEL & DATABASE
-# ==========================================
-print("\n" + "="*50)
-print("--- STARTING BACKEND SYSTEM ---")
-
-# Database JSON
-try:
-    with open("database_41_orang.json", "r") as f:
-        DATABASE = json.load(f)
-except:
-    DATABASE = {}
-CLASS_NAMES = [f"{i+1:03d}" for i in range(41)]
-
-# Model Klasifikasi
-try:
-    model_clf = keras.models.load_model("model_klasifikasi_telapak.h5", compile=False)
-    print("✅ Model Klasifikasi: LOADED")
-except Exception as e:
-    print(f"❌ Model Klasifikasi ERROR: {e}")
-    model_clf = None
-
-# Model Verifikasi (Siamese)
-custom_objects = {
-    'EuclideanDistance': EuclideanDistance,
-    'euclidean_distance': euclidean_distance
-}
-try:
-    model_siamese = keras.models.load_model("model_siamese_telapak.h5", custom_objects=custom_objects, compile=False)
-    print("✅ Model Siamese: LOADED (Dual Input Mode)")
-except Exception as e:
-    print(f"⚠️ Model Siamese ERROR: {e}")
-    model_siamese = None
-
-FOLDER_REF = "database_foto"
-
-# ==========================================
-# 3. PREPROCESSING
-=======
-# ==========================================
-# 2. LOAD MODEL
+# 2. LOAD MODEL (Cache agar cepat)
 # ==========================================
 @st.cache_resource
 def load_models():
@@ -117,7 +53,6 @@ DATABASE = {
 
 # ==========================================
 # 3. FUNGSI UTILITY
->>>>>>> 5a89ef314d09fc40f633f6fc05431870735d8187
 # ==========================================
 def preprocess_image(image, target_size):
     if image.mode != "RGB":
@@ -128,90 +63,6 @@ def preprocess_image(image, target_size):
     return img_array
 
 # ==========================================
-<<<<<<< HEAD
-# 4. ROUTE PREDIKSI (FIXED DUAL INPUT)
-# ==========================================
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-    
-    try:
-        # --- 1. GAMBAR INPUT (Dari React) ---
-        file = request.files['file']
-        img_input_pil = Image.open(io.BytesIO(file.read()))
-        
-        print("\n📸 New Request Received")
-
-        # --- 2. KLASIFIKASI (Tebak ID) ---
-        if model_clf:
-            input_clf = preprocess_image(img_input_pil, (224, 224))
-            preds = model_clf.predict(input_clf, verbose=0)
-            idx = np.argmax(preds)
-            conf_clf = float(np.max(preds) * 100)
-            id_user = CLASS_NAMES[idx]
-            print(f"   Step 1 (Klasifikasi): ID-{id_user} | Conf: {conf_clf:.2f}%")
-        else:
-            id_user = "001"
-            conf_clf = 0.0
-
-        user_data = DATABASE.get(id_user, {"nama": "Unknown", "jabatan": "-", "usia": "-"})
-
-        # --- 3. VERIFIKASI (Siamese Dual Input) ---
-        jarak = -1.0
-        status = "UNVERIFIED"
-
-        if model_siamese:
-            # Cari GAMBAR REFERENSI di folder server
-            path_ref = os.path.join(FOLDER_REF, f"{id_user}.jpg")
-            
-            if os.path.exists(path_ref):
-                print(f"   Step 2 (Verifikasi): Membandingkan Input vs {id_user}.jpg")
-                img_ref_pil = Image.open(path_ref)
-
-                # Siapkan 2 Gambar
-                # Ubah ukuran sesuai input shape Siamese Anda (misal 128x128)
-                SIZE = (128, 128) 
-                in_1 = preprocess_image(img_input_pil, SIZE) # Gambar Upload
-                in_2 = preprocess_image(img_ref_pil, SIZE)   # Gambar Database
-
-                # === PERBAIKAN PENTING DI SINI ===
-                # Kirim List [in_1, in_2] ke model
-                prediksi_siamese = model_siamese.predict([in_1, in_2], verbose=0)
-                
-                # Output model adalah [[jarak]], ambil angkanya
-                jarak = float(prediksi_siamese[0][0])
-                print(f"   >>> Jarak Euclidean: {jarak:.4f}")
-
-                # Threshold Logic
-                THRESHOLD = 0.5
-                if jarak < THRESHOLD:
-                    status = "VERIFIED"
-                else:
-                    status = "UNVERIFIED"
-            else:
-                print(f"⚠️ Foto referensi {id_user}.jpg tidak ada. Verifikasi dilewati.")
-        
-        return jsonify({
-            "data": user_data,
-            "confidence": conf_clf,
-            "status_verifikasi": status,
-            "meta": {
-                "klasifikasi_confidence": conf_clf,
-                "verifikasi_distance": jarak,
-                "pesan": "Sukses"
-            }
-        })
-
-    except Exception as e:
-        print(f"🔥 FATAL ERROR: {e}")
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == '__main__':
-    if not os.path.exists(FOLDER_REF):
-        os.makedirs(FOLDER_REF)
-    app.run(port=5000, debug=True)
-=======
 # 4. TAMPILAN UTAMA (UI)
 # ==========================================
 def main():
@@ -302,4 +153,3 @@ def main():
 
 if __name__ == '__main__':
     main()
->>>>>>> 5a89ef314d09fc40f633f6fc05431870735d8187

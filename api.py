@@ -2,12 +2,14 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import json
 import os
 import keras
 
 # ==========================================
-# 1. DEFINISI CUSTOM LAYER (Supaya Cloud Tidak Error)
+# 1. DEFINISI CUSTOM OBJECTS (WAJIB ADA)
 # ==========================================
+# Agar Streamlit tidak error saat meload model Siamese
 @keras.saving.register_keras_serializable()
 def euclidean_distance(vectors):
     x, y = vectors
@@ -23,36 +25,43 @@ class EuclideanDistance(keras.layers.Layer):
         return tf.math.reduce_sum(tf.math.square(x - y), axis=-1, keepdims=True)
 
 # ==========================================
-# 2. LOAD MODEL (Cache agar cepat)
+# 2. CONFIG & LOAD MODEL
 # ==========================================
+st.set_page_config(page_title="Sistem Keamanan Biometrik", page_icon="🖐️", layout="wide")
+
 @st.cache_resource
 def load_models():
-    # Load Klasifikasi
+    # A. Load Model Klasifikasi
     try:
         model_clf = keras.models.load_model("model_klasifikasi_telapak.h5", compile=False)
-    except:
+    except Exception as e:
+        st.error(f"Gagal memuat Model Klasifikasi: {e}")
         model_clf = None
 
-    # Load Siamese
-    custom_objects = {'EuclideanDistance': EuclideanDistance, 'euclidean_distance': euclidean_distance}
+    # B. Load Model Siamese (Verifikasi)
+    custom_objects = {
+        'EuclideanDistance': EuclideanDistance,
+        'euclidean_distance': euclidean_distance
+    }
     try:
-        model_ver = keras.models.load_model("model_siamese_telapak.h5", custom_objects=custom_objects, compile=False)
-    except:
-        model_ver = None
+        model_sia = keras.models.load_model("model_siamese_telapak.h5", custom_objects=custom_objects, compile=False)
+    except Exception as e:
+        st.warning(f"Model Siamese gagal dimuat: {e}")
+        model_sia = None
     
-    return model_clf, model_ver
+    return model_clf, model_sia
 
-# Load Database Nama Dummy
+# Load Database Profil JSON
+try:
+    with open("database_41_orang.json", "r") as f:
+        DATABASE = json.load(f)
+except FileNotFoundError:
+    DATABASE = {}
+
 CLASS_NAMES = [f"{i+1:03d}" for i in range(41)]
-DATABASE = {
-    '001': {'nama': 'Andi Pratama', 'jabatan': 'Mahasiswa', 'usia': 21},
-    '002': {'nama': 'Budi Santoso', 'jabatan': 'Dosen', 'usia': 45},
-    '005': {'nama': 'Eko Kurniawan', 'jabatan': 'Laboran', 'usia': 35},
-    '041': {'nama': 'Nurul Putri', 'jabatan': 'Mahasiswa', 'usia': 22}
-}
 
 # ==========================================
-# 3. FUNGSI UTILITY
+# 3. FUNGSI PREPROCESSING
 # ==========================================
 def preprocess_image(image, target_size):
     if image.mode != "RGB":
@@ -66,90 +75,134 @@ def preprocess_image(image, target_size):
 # 4. TAMPILAN UTAMA (UI)
 # ==========================================
 def main():
-    st.set_page_config(page_title="UAS Biometrik", page_icon="🖐️", layout="wide")
-    
-    st.markdown("<h1 style='text-align: center;'>🖐️ Sistem Keamanan Biometrik</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Klasifikasi (MobileNetV2) & Verifikasi (Siamese Network)</p>", unsafe_allow_html=True)
-    st.write("---")
+    # Header
+    st.markdown("""
+    <div style='text-align: center; margin-bottom: 30px;'>
+        <h1>🖐️ Sistem Keamanan Biometrik</h1>
+        <p>Integrasi Klasifikasi MobileNetV2 & Verifikasi Siamese Network</p>
+        <hr>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Load Model
     model_clf, model_siamese = load_models()
-
-    if not model_clf or not model_siamese:
-        st.error("Model gagal dimuat. Pastikan file .h5 sudah diupload ke GitHub.")
+    if not model_clf: 
+        st.error("Model Utama tidak ditemukan. Harap cek file .h5")
         return
 
-    col1, col2 = st.columns([1, 1.5])
+    # Layout Dua Kolom
+    col_input, col_hasil = st.columns([1, 1.5], gap="large")
 
-    # --- INPUT ---
-    with col1:
-        st.subheader("1. Input Gambar")
-        uploaded_file = st.file_uploader("Upload Telapak Tangan", type=["jpg", "png", "jpeg"])
+    # --- KOLOM KIRI: INPUT ---
+    with col_input:
+        st.subheader("1. Input Citra")
+        uploaded_file = st.file_uploader("Upload Foto Telapak Tangan", type=["jpg", "png", "jpeg"])
         
         if uploaded_file:
-            image = Image.open(uploaded_file)
-            st.image(image, caption="Preview", use_column_width=True)
-            run_btn = st.button("🔍 SCAN & VERIFIKASI", type="primary", use_container_width=True)
+            image_display = Image.open(uploaded_file)
+            st.image(image_display, caption="Preview Input", use_column_width=True)
+            
+            run_process = st.button("🔍 SCAN & VERIFIKASI", type="primary", use_container_width=True)
 
-    # --- HASIL ---
-    with col2:
-        st.subheader("2. Hasil Analisis")
-        
-        if uploaded_file and run_btn:
-            with st.spinner('Memproses kecerdasan buatan...'):
-                # 1. KLASIFIKASI
-                input_clf = preprocess_image(image, (224, 224))
+    # --- KOLOM KANAN: HASIL ---
+    with col_hasil:
+        st.subheader("2. Hasil Identifikasi")
+
+        if uploaded_file and run_process:
+            with st.spinner('Menganalisis pola biometrik...'):
+                
+                # A. KLASIFIKASI (Menebak ID)
+                # MobileNet butuh 224x224
+                input_clf = preprocess_image(image_display, (224, 224)) 
                 preds = model_clf.predict(input_clf)
+                
                 idx = np.argmax(preds)
-                conf = np.max(preds) * 100
+                conf_clf = float(np.max(preds) * 100)
                 id_user = CLASS_NAMES[idx]
                 
-                # Ambil Info User
-                info = DATABASE.get(id_user, {'nama': 'Unknown User', 'jabatan': 'Tamu', 'usia': '-'})
+                # Ambil Data Profil dari JSON
+                info = DATABASE.get(id_user, {'nama': 'Unknown', 'jabatan': '-', 'usia': '-'})
 
-                # 2. VERIFIKASI (SIAMESE)
+                # B. VERIFIKASI SIAMESE (Mengecek Kemiripan)
                 jarak = -1.0
-                path_ref = os.path.join("database_foto", f"{id_user}.jpg")
+                status_verif = "UNVERIFIED"
                 
-                # Cek apakah foto referensi ada di GitHub/Folder
-                if os.path.exists(path_ref):
-                    img_ref = Image.open(path_ref)
+                if model_siamese:
+                    # Cari foto referensi di folder
+                    path_ref = os.path.join("database_foto", f"{id_user}.jpg")
                     
-                    # Dual Input Preprocessing
-                    SIZE_SIA = (128, 128) # Sesuaikan dgn model siamese Anda
-                    in_1 = preprocess_image(image, SIZE_SIA)
-                    in_2 = preprocess_image(img_ref, SIZE_SIA)
-                    
-                    # PREDIKSI SIAMESE (DUAL INPUT)
-                    jarak = float(model_siamese.predict([in_1, in_2])[0][0])
+                    if os.path.exists(path_ref):
+                        img_ref = Image.open(path_ref)
+                        
+                        # Siamese butuh 128x128 (Sesuaikan dengan training Anda)
+                        SIZE_SIA = (128, 128)
+                        in_1 = preprocess_image(image_display, SIZE_SIA)
+                        in_2 = preprocess_image(img_ref, SIZE_SIA)
+                        
+                        # PREDIKSI JARAK (Dual Input)
+                        pred_sia = model_siamese.predict([in_1, in_2])
+                        jarak = float(pred_sia[0][0])
+                        
+                        # LOGIKA THRESHOLD
+                        THRESHOLD = 0.5
+                        if jarak < THRESHOLD:
+                            status_verif = "VERIFIED"
+                        else:
+                            status_verif = "REJECTED (Low Similarity)"
+                    else:
+                        st.warning(f"Foto referensi {id_user}.jpg tidak ditemukan. Verifikasi dilewati.")
+                
+                # C. MENAMPILKAN KARTU IDENTITAS
+                if status_verif == "VERIFIED":
+                    theme_color = "#27ae60" # Hijau
+                    bg_theme = "#e9f7ef"
+                    icon = "✅"
                 else:
-                    st.warning(f"Foto referensi {id_user}.jpg tidak ditemukan di server.")
+                    theme_color = "#c0392b" # Merah
+                    bg_theme = "#fdedec"
+                    icon = "⛔"
 
-                # 3. LOGIKA FINAL
-                THRESHOLD = 0.5
-                is_verified = jarak != -1.0 and jarak < THRESHOLD
-
-                # 4. TAMPILAN KARTU
-                if is_verified:
-                    bg_color = "#e6fffa"
-                    border_color = "#2ecc71"
-                    status = "✅ VERIFIED ACCESS"
-                else:
-                    bg_color = "#fff5f5"
-                    border_color = "#e74c3c"
-                    status = "⛔ ACCESS DENIED"
-
+                # Render HTML Card
                 st.markdown(f"""
-                <div style="background-color: {bg_color}; padding: 20px; border-radius: 10px; border-left: 10px solid {border_color}; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <h2 style="color: {border_color}; margin:0;">{status}</h2>
-                    <hr>
-                    <p><strong>ID:</strong> {id_user}</p>
-                    <p><strong>NAMA:</strong> {info['nama']}</p>
-                    <p><strong>JABATAN:</strong> {info['jabatan']}</p>
+                <div style="
+                    border: 2px solid {theme_color};
+                    border-radius: 15px;
+                    padding: 25px;
+                    background-color: {bg_theme};
+                    font-family: sans-serif;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid {theme_color}; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h2 style="color: {theme_color}; margin: 0;">{icon} {status_verif}</h2>
+                        <h3 style="margin: 0; color: #555;">ID: {id_user}</h3>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <p style="margin:0; font-size:0.85em; color:#666;">NAMA LENGKAP</p>
+                            <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['nama']}</p>
+                        </div>
+                        <div>
+                            <p style="margin:0; font-size:0.85em; color:#666;">JABATAN</p>
+                            <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['jabatan']}</p>
+                        </div>
+                         <div>
+                            <p style="margin:0; font-size:0.85em; color:#666;">USIA</p>
+                            <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['usia']} Tahun</p>
+                        </div>
+                        <div>
+                            <p style="margin:0; font-size:0.85em; color:#666;">JARAK SIAMESE</p>
+                            <p style="margin:0; font-size:1.2em; font-weight:bold; color:{theme_color};">{jarak:.4f}</p>
+                        </div>
+                    </div>
                     <br>
-                    <p><small>Jarak Siamese: {jarak:.4f} (Threshold: {THRESHOLD})</small></p>
+                    <small style="color: #777;"><i>Klasifikasi Confidence: {conf_clf:.2f}%</i></small>
                 </div>
                 """, unsafe_allow_html=True)
+
+        elif not uploaded_file:
+            # Tampilan Kosong
+            st.info("Silakan upload gambar untuk memulai proses identifikasi.")
 
 if __name__ == '__main__':
     main()

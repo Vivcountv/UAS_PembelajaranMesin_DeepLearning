@@ -201,8 +201,8 @@ with st.sidebar:
     # Text input untuk link Google Drive / Dropbox
     dataset_link = st.text_input(
         "Link Google Drive/Dropbox:",
-        placeholder="https://drive.google.com/...",
-        help="Masukkan link untuk download dataset lengkap"
+        placeholder="salin link ini dan download",
+        help="https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=drive_link"
     )
     
     if dataset_link:
@@ -263,7 +263,7 @@ def main():
             st.info("👆 Silakan upload gambar telapak tangan untuk memulai")
             
             # Panduan untuk dosen
-            with st.expander("💡 Panduan untuk Dosen/Penguji"):
+            with st.expander("💡 Panduan untuk Penguji"):
                 st.markdown("""
                 **Untuk mendapatkan foto testing yang valid:**
                 

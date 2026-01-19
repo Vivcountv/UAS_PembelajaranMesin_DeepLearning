@@ -5,6 +5,8 @@ from PIL import Image
 import json
 import os
 import keras
+import zipfile
+import io
 
 # ==========================================
 # 1. DEFINISI CUSTOM OBJECTS (WAJIB ADA)
@@ -30,7 +32,7 @@ st.set_page_config(
     page_title="Sistem Keamanan Biometrik", 
     page_icon="🖐️", 
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Custom CSS untuk styling tambahan
@@ -61,6 +63,13 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #155a8a;
     }
+    .download-section {
+        background-color: #f0f8ff;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #1f77b4;
+        margin: 20px 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -69,9 +78,9 @@ def load_models():
     # A. Load Model Klasifikasi
     try:
         model_clf = keras.models.load_model("model_klasifikasi_telapak.h5", compile=False)
-        st.success("✅ Model Klasifikasi berhasil dimuat")
+        st.sidebar.success("✅ Model Klasifikasi berhasil dimuat")
     except Exception as e:
-        st.error(f"❌ Gagal memuat Model Klasifikasi: {e}")
+        st.sidebar.error(f"❌ Gagal memuat Model Klasifikasi: {e}")
         model_clf = None
 
     # B. Load Model Siamese (Verifikasi)
@@ -81,9 +90,9 @@ def load_models():
     }
     try:
         model_sia = keras.models.load_model("model_siamese_telapak.h5", custom_objects=custom_objects, compile=False)
-        st.success("✅ Model Siamese berhasil dimuat")
+        st.sidebar.success("✅ Model Siamese berhasil dimuat")
     except Exception as e:
-        st.warning(f"⚠️ Model Siamese gagal dimuat: {e}")
+        st.sidebar.warning(f"⚠️ Model Siamese gagal dimuat: {e}")
         model_sia = None
     
     return model_clf, model_sia
@@ -94,7 +103,7 @@ try:
         DATABASE = json.load(f)
 except FileNotFoundError:
     DATABASE = {}
-    st.warning("⚠️ File database_41_orang.json tidak ditemukan")
+    st.sidebar.warning("⚠️ File database_41_orang.json tidak ditemukan")
 
 CLASS_NAMES = [f"{i+1:03d}" for i in range(41)]
 
@@ -110,12 +119,120 @@ def preprocess_image(image, target_size):
     return img_array
 
 # ==========================================
-# 4. TAMPILAN UTAMA (UI)
+# 3.5 FUNGSI UNTUK MEMBUAT ZIP SAMPLE
+# ==========================================
+def create_sample_zip():
+    """Membuat ZIP berisi sample foto dari database_foto"""
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        # Ambil 10 sample foto pertama dari folder database_foto
+        database_path = "database_foto"
+        if os.path.exists(database_path):
+            files = os.listdir(database_path)[:10]  # Ambil 10 file pertama
+            for filename in files:
+                file_path = os.path.join(database_path, filename)
+                if os.path.isfile(file_path):
+                    zip_file.write(file_path, arcname=filename)
+    
+    zip_buffer.seek(0)
+    return zip_buffer
+
+# ==========================================
+# 4. SIDEBAR - INFORMASI & DOWNLOAD
+# ==========================================
+with st.sidebar:
+    st.markdown("### 📋 Informasi Sistem")
+    st.markdown("---")
+    
+    st.markdown("""
+    **Tentang Sistem:**
+    - Model: MobileNetV2 + Siamese Network
+    - Dataset: 41 Orang
+    - Akurasi Klasifikasi: Training Model
+    - Threshold Verifikasi: 0.5
+    """)
+    
+    st.markdown("---")
+    st.markdown("### 🧪 Testing Dataset")
+    
+    st.info("""
+    **⚠️ PENTING UNTUK PENGUJIAN:**
+    
+    Sistem ini hanya dapat mengenali **41 orang** yang sudah dilatih dalam model.
+    
+    Untuk testing, Anda perlu menggunakan foto dari 41 orang tersebut.
+    """)
+    
+    # Tombol Download Sample
+    st.markdown("#### 📥 Download Sample Foto")
+    
+    # Cek apakah folder database_foto ada
+    if os.path.exists("database_foto") and len(os.listdir("database_foto")) > 0:
+        try:
+            zip_data = create_sample_zip()
+            st.download_button(
+                label="📦 Download 10 Sample Foto",
+                data=zip_data,
+                file_name="sample_telapak_tangan.zip",
+                mime="application/zip",
+                help="Download 10 foto sample untuk testing sistem"
+            )
+            st.success("✅ Sample tersedia untuk download")
+        except Exception as e:
+            st.error(f"❌ Error membuat ZIP: {e}")
+    else:
+        st.warning("⚠️ Folder database_foto tidak ditemukan atau kosong")
+    
+    st.markdown("---")
+    
+    # Daftar ID yang tersedia
+    with st.expander("📜 Daftar ID Terlatih (41 Orang)"):
+        cols = st.columns(3)
+        for i, class_name in enumerate(CLASS_NAMES):
+            with cols[i % 3]:
+                st.text(f"• {class_name}")
+    
+    st.markdown("---")
+    
+    # Link alternatif (jika ada hosting dataset)
+    st.markdown("#### 🔗 Link Dataset Eksternal")
+    
+    # Text input untuk link Google Drive / Dropbox
+    dataset_link = st.text_input(
+        "Link Google Drive/Dropbox:",
+        placeholder="https://drive.google.com/...",
+        help="Masukkan link untuk download dataset lengkap"
+    )
+    
+    if dataset_link:
+        st.markdown(f"[🔗 Buka Link Dataset]({dataset_link})")
+    
+    # Contoh cara menggunakan
+    st.markdown("---")
+    st.markdown("#### 📖 Cara Penggunaan")
+    st.markdown("""
+    1. Download sample foto di atas
+    2. Extract file ZIP
+    3. Upload salah satu foto
+    4. Klik "SCAN & VERIFIKASI"
+    5. Lihat hasil identifikasi
+    """)
+
+# ==========================================
+# 5. TAMPILAN UTAMA (UI)
 # ==========================================
 def main():
     # Header dengan emoji dan styling
     st.markdown('<p class="main-title">🖐️ Sistem Keamanan Biometrik</p>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Integrasi Klasifikasi MobileNetV2 & Verifikasi Siamese Network</p>', unsafe_allow_html=True)
+    
+    # Banner Peringatan
+    st.warning("""
+    ⚠️ **PERHATIAN UNTUK PENGUJI:** Sistem ini hanya dapat mengenali 41 identitas yang sudah dilatih. 
+    Silakan download sample foto dari **sidebar kiri** untuk testing yang akurat.
+    """)
+    
     st.markdown("---")
 
     # Load Model
@@ -144,6 +261,26 @@ def main():
             run_process = st.button("🔍 SCAN & VERIFIKASI", type="primary")
         else:
             st.info("👆 Silakan upload gambar telapak tangan untuk memulai")
+            
+            # Panduan untuk dosen
+            with st.expander("💡 Panduan untuk Dosen/Penguji"):
+                st.markdown("""
+                **Untuk mendapatkan foto testing yang valid:**
+                
+                1. **Opsi 1: Download Sample**
+                   - Buka sidebar di kiri
+                   - Klik "📦 Download 10 Sample Foto"
+                   - Extract ZIP dan upload salah satu foto
+                
+                2. **Opsi 2: Gunakan Dataset Lengkap**
+                   - Hubungi pengembang untuk link dataset
+                   - Atau gunakan link di sidebar (jika tersedia)
+                
+                3. **Catatan Penting:**
+                   - Foto random dari internet **TIDAK** akan dikenali
+                   - Sistem hanya mengenali 41 orang tertentu
+                   - ID yang valid: 001 - 041
+                """)
 
     # --- KOLOM KANAN: HASIL ---
     with col_hasil:
@@ -268,13 +405,69 @@ def main():
             st.info("ℹ️ Menunggu input gambar...")
             st.markdown("""
             **Cara Penggunaan:**
-            1. Upload foto telapak tangan di kolom sebelah kiri
-            2. Klik tombol **SCAN & VERIFIKASI**
-            3. Tunggu hasil analisis muncul di sini
-            4. Sistem akan menampilkan identitas dan status verifikasi
+            1. Download sample foto dari **sidebar kiri** 📥
+            2. Upload salah satu foto sample di kolom kiri
+            3. Klik tombol **SCAN & VERIFIKASI**
+            4. Tunggu hasil analisis muncul di sini
+            5. Sistem akan menampilkan identitas dan status verifikasi
+            
+            ---
+            
+            **⚠️ Catatan Penting:**
+            - Gunakan foto dari 41 orang yang sudah dilatih
+            - Foto random tidak akan dikenali dengan akurat
+            - Download sample di sidebar untuk testing
             """)
         else:
             st.warning("⚠️ Klik tombol SCAN & VERIFIKASI untuk memproses")
 
 if __name__ == '__main__':
     main()
+```
+
+## 🎯 Fitur Baru yang Ditambahkan:
+
+### 1. **📥 Download Sample Dataset**
+- Tombol download otomatis 10 foto sample
+- Format ZIP untuk kemudahan
+- Langsung dari folder `database_foto`
+
+### 2. **📋 Sidebar Informatif**
+- Daftar 41 ID yang tersedia
+- Status model (berhasil/gagal load)
+- Panduan penggunaan lengkap
+
+### 3. **🔗 Input Link Eksternal**
+- Text box untuk link Google Drive/Dropbox
+- Dosen bisa akses dataset lengkap jika perlu
+
+### 4. **⚠️ Banner Peringatan**
+- Notifikasi jelas di bagian atas
+- Mengingatkan dosen untuk download sample
+
+### 5. **💡 Panduan untuk Penguji**
+- Expander dengan instruksi lengkap
+- 3 opsi untuk mendapatkan foto testing
+
+## 📦 Cara Mempersiapkan untuk Dosen:
+
+### Opsi 1: Buat File README.txt
+Buat file `README_TESTING.txt` berisi:
+```
+PANDUAN TESTING SISTEM BIOMETRIK
+================================
+
+PENTING: Sistem ini hanya mengenali 41 orang yang sudah dilatih!
+
+CARA TESTING:
+1. Jalankan: streamlit run app.py
+2. Buka sidebar kiri
+3. Klik "Download 10 Sample Foto"
+4. Extract file ZIP
+5. Upload salah satu foto
+6. Klik "SCAN & VERIFIKASI"
+
+LINK DATASET LENGKAP (jika diperlukan):
+[Masukkan link Google Drive Anda di sini]
+
+ID YANG VALID: 001 - 041

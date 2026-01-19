@@ -162,8 +162,8 @@ def main():
                     bg_theme = "#fdedec"
                     icon = "⛔"
 
-                # Render HTML Card
-                st.markdown(f"""
+                # Kita simpan HTML ke variabel dulu agar rapi
+                html_card = f"""
                 <div style="
                     border: 2px solid {theme_color};
                     border-radius: 15px;
@@ -198,8 +198,10 @@ def main():
                     <br>
                     <small style="color: #777;"><i>Klasifikasi Confidence: {conf_clf:.2f}%</i></small>
                 </div>
-                """, unsafe_allow_html=True)
-
+                """
+                
+                # EKSEKUSI RENDER HTML (Wajib unsafe_allow_html=True)
+                st.markdown(html_card, unsafe_allow_html=True)
         elif not uploaded_file:
             # Tampilan Kosong
             st.info("Silakan upload gambar untuk memulai proses identifikasi.")

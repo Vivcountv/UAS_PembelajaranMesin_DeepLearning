@@ -453,7 +453,6 @@ if __name__ == '__main__':
 
 ### Opsi 1: Buat File README.txt
 Buat file `README_TESTING.txt` berisi:
-```
 PANDUAN TESTING SISTEM BIOMETRIK
 ================================
 
@@ -467,7 +466,7 @@ CARA TESTING:
 5. Upload salah satu foto
 6. Klik "SCAN & VERIFIKASI"
 
-LINK DATASET LENGKAP (jika diperlukan):
+LINK DATASET LENGKAP (untuk mengetest pengenalan data diri setia data):
 https://drive.google.com/drive/folders/1RtvIMfPSNCQnYbwj5Te5VrPpidxFAbmR?usp=drive_link
 
 ID YANG VALID: 001 - 041

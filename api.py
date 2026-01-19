@@ -154,16 +154,16 @@ def main():
                 
                 # C. MENAMPILKAN KARTU IDENTITAS
                 if status_verif == "VERIFIED":
-                    theme_color = "#27ae60" # Hijau
+                    theme_color = "#27ae60"  # Hijau
                     bg_theme = "#e9f7ef"
                     icon = "✅"
                 else:
-                    theme_color = "#c0392b" # Merah
+                    theme_color = "#c0392b"  # Merah
                     bg_theme = "#fdedec"
                     icon = "⛔"
 
-                # Kita simpan HTML ke variabel dulu agar rapi
-                html_card = f"""
+                # RENDER HTML CARD (PERBAIKAN DI SINI)
+                st.markdown(f"""
                 <div style="
                     border: 2px solid {theme_color};
                     border-radius: 15px;
@@ -186,7 +186,7 @@ def main():
                             <p style="margin:0; font-size:0.85em; color:#666;">JABATAN</p>
                             <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['jabatan']}</p>
                         </div>
-                         <div>
+                        <div>
                             <p style="margin:0; font-size:0.85em; color:#666;">USIA</p>
                             <p style="margin:0; font-size:1.1em; font-weight:bold; color:#333;">{info['usia']} Tahun</p>
                         </div>
@@ -198,10 +198,8 @@ def main():
                     <br>
                     <small style="color: #777;"><i>Klasifikasi Confidence: {conf_clf:.2f}%</i></small>
                 </div>
-                """
+                """, unsafe_allow_html=True)
                 
-                # EKSEKUSI RENDER HTML (Wajib unsafe_allow_html=True)
-                st.markdown(html_card, unsafe_allow_html=True)
         elif not uploaded_file:
             # Tampilan Kosong
             st.info("Silakan upload gambar untuk memulai proses identifikasi.")

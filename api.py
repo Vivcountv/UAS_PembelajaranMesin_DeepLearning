@@ -190,9 +190,8 @@ with st.sidebar:
     st.info("""
     **Dataset Lengkap berisi:**
     - 41 identitas (ID: 001-041)
-    - Total ~500+ foto training
+    - Total ~1000+ foto training
     - Format: JPG/PNG
-    - Ukuran: ~XX MB
     """)
     
     st.link_button(
